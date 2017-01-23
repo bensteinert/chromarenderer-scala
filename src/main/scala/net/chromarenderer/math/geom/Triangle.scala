@@ -1,6 +1,6 @@
 package net.chromarenderer.math.geom
 
-import net.chromarenderer.math.Vector3
+import net.chromarenderer.math.{Constants, Vector3}
 import net.chromarenderer.math.raytracing.Ray
 
 /**
@@ -47,7 +47,37 @@ class Triangle(p0_in: Vector3, p1_in: Vector3, p2_in: Vector3, n_in: Vector3) {
 
   def intersect(ray: Ray): Float = {
 
+    // Ignore intersection from the 'back' (backface culling)
+    val dotProduct: Float = ray.dir * n
+    if (dotProduct > 0) {
+      return 0
+    }
+
+    val P = ray.dir % e2
+    val det = e1 * P
+
+    /* if determinant is near zero, ray lies in plane of triangle */
+    if (det > -Constants.FLT_EPSILON && det < Constants.FLT_EPSILON) {
+      return 0
+    }
+
+    val invDet: Float = 1 / det
+    val T: Vector3 = ray.origin - p0
+    /* calculate U parameter and test texture coord bounds */
+    val u: Float = (T * P) * invDet
+    if (u < 0 || u > 1) {
+      return 0
+    }
+
+    val Q = T % e1
+    /* calculate V parameter and test bounds */
+    val v = (ray.dir * Q) * invDet
+    if (v < 0.0f || u + v > 1.0f) {
+      return 0
+    }
+
+    /* calculate distance, ray intersects triangle */
+    (e2 * Q) * invDet
   }
 
-  
 }
